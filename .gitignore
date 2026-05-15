@@ -1,0 +1,40 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log
+
+# Environment
+.env
+*.local
+
+# Build output
+dist/
+build/
+
+# Angular
+.angular/
+
+# Database
+data/
+*.db
+*.sqlite
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Docker volumes (local dev)
+postgres_data/
+qdrant_data/

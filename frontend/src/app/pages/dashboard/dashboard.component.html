@@ -1,0 +1,91 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Dashboard KPI</h1>
+    <button class="btn-ai" (click)="runAiAnalysis()" [disabled]="analyzing">
+      {{ analyzing ? '⏳ Analiza AI...' : '🤖 Analiza AI' }}
+    </button>
+  </div>
+
+  <div class="loading" *ngIf="loading">Ładowanie danych...</div>
+
+  <div class="kpi-grid" *ngIf="kpi && !loading">
+    <div class="kpi-card">
+      <div class="kpi-icon">✅</div>
+      <div class="kpi-value">{{ kpi.task_completion_rate }}%</div>
+      <div class="kpi-label">Task Completion Rate</div>
+      <div class="kpi-sub">{{ kpi.done_tasks }} / {{ kpi.total_tasks }} zadań</div>
+    </div>
+
+    <div class="kpi-card" [class.warning]="kpi.overdue_tasks > 0">
+      <div class="kpi-icon">⚠️</div>
+      <div class="kpi-value">{{ kpi.overdue_tasks }}</div>
+      <div class="kpi-label">Zadania po terminie</div>
+      <div class="kpi-sub">Cel: 0</div>
+    </div>
+
+    <div class="kpi-card" [class.warning]="kpi.overdue_invoices > 0">
+      <div class="kpi-icon">📄</div>
+      <div class="kpi-value">{{ kpi.overdue_invoices }}</div>
+      <div class="kpi-label">Faktury przeterminowane</div>
+      <div class="kpi-sub">{{ kpi.pending_invoices }} oczekujących</div>
+    </div>
+
+    <div class="kpi-card" [class.positive]="kpi.net_cashflow > 0" [class.negative]="kpi.net_cashflow < 0">
+      <div class="kpi-icon">💰</div>
+      <div class="kpi-value">{{ kpi.net_cashflow | number:'1.0-0' }} PLN</div>
+      <div class="kpi-label">Net Cash Flow (30 dni)</div>
+      <div class="kpi-sub">Przychód: {{ kpi.monthly_income | number:'1.0-0' }} PLN</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon">📋</div>
+      <div class="kpi-value">{{ kpi.pending_invoices_total | number:'1.0-0' }} PLN</div>
+      <div class="kpi-label">Faktury do opłacenia</div>
+      <div class="kpi-sub">{{ kpi.pending_invoices }} faktur</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon">📉</div>
+      <div class="kpi-value">{{ kpi.monthly_expenses | number:'1.0-0' }} PLN</div>
+      <div class="kpi-label">Wydatki (30 dni)</div>
+    </div>
+  </div>
+
+  <div class="ai-analysis" *ngIf="aiAnalysis">
+    <h2>🤖 Analiza AI</h2>
+    <div class="alert-box" *ngIf="aiAnalysis.cash_flow_alert">
+      ⚡ {{ aiAnalysis.cash_flow_alert }}
+    </div>
+    <div class="recommendations" *ngIf="aiAnalysis.recommendations?.length">
+      <h3>Rekomendacje</h3>
+      <ul>
+        <li *ngFor="let r of aiAnalysis.recommendations">{{ r }}</li>
+      </ul>
+    </div>
+    <div class="ai-kpi-grid">
+      <div class="ai-kpi-item" *ngIf="aiAnalysis.dso_days !== undefined">
+        <span class="label">DSO</span>
+        <span class="val">{{ aiAnalysis.dso_days }} dni</span>
+      </div>
+      <div class="ai-kpi-item" *ngIf="aiAnalysis.avg_completion_days !== undefined">
+        <span class="label">Śr. czas realizacji</span>
+        <span class="val">{{ aiAnalysis.avg_completion_days }} dni</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="quick-actions">
+    <a routerLink="/tasks" class="action-card">
+      <span>✅</span>
+      <span>Zarządzaj zadaniami</span>
+    </a>
+    <a routerLink="/finances" class="action-card">
+      <span>💰</span>
+      <span>Faktury i finanse</span>
+    </a>
+    <a routerLink="/assistant" class="action-card">
+      <span>🎙️</span>
+      <span>Asystent głosowy</span>
+    </a>
+  </div>
+</div>

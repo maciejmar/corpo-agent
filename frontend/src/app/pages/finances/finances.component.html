@@ -1,0 +1,124 @@
+<div class="page">
+  <div class="page-header">
+    <h1>💰 Finanse</h1>
+  </div>
+
+  <div class="summary-bar" *ngIf="summary">
+    <div class="sum-card positive">
+      <div class="sum-label">Przychody (90 dni)</div>
+      <div class="sum-val">{{ summary.total_income | number:'1.0-0' }} PLN</div>
+    </div>
+    <div class="sum-card negative">
+      <div class="sum-label">Wydatki (90 dni)</div>
+      <div class="sum-val">{{ summary.total_expense | number:'1.0-0' }} PLN</div>
+    </div>
+    <div class="sum-card" [class.positive]="summary.balance >= 0" [class.negative]="summary.balance < 0">
+      <div class="sum-label">Saldo</div>
+      <div class="sum-val">{{ summary.balance | number:'1.0-0' }} PLN</div>
+    </div>
+    <div class="sum-card warning" *ngIf="summary.overdue_invoices > 0">
+      <div class="sum-label">Przeterminowane faktury</div>
+      <div class="sum-val">{{ summary.overdue_invoices }} ({{ summary.overdue_amount | number:'1.0-0' }} PLN)</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button [class.active]="activeTab === 'docs'" (click)="activeTab = 'docs'">📄 Dokumenty</button>
+    <button [class.active]="activeTab === 'cashflow'" (click)="activeTab = 'cashflow'">📈 Cash Flow</button>
+  </div>
+
+  <!-- Documents Tab -->
+  <div *ngIf="activeTab === 'docs'">
+    <div class="tab-actions">
+      <button class="btn-primary" (click)="showForm = !showForm">+ Dodaj dokument</button>
+    </div>
+
+    <div class="card" *ngIf="showForm">
+      <h3>Nowy dokument</h3>
+      <div class="form-grid">
+        <div class="field"><label>Tytuł *</label><input [(ngModel)]="newDoc.title" /></div>
+        <div class="field">
+          <label>Typ</label>
+          <select [(ngModel)]="newDoc.type">
+            <option value="invoice">Faktura</option>
+            <option value="expense">Wydatek</option>
+            <option value="contract">Kontrakt</option>
+            <option value="other">Inne</option>
+          </select>
+        </div>
+        <div class="field"><label>Kwota *</label><input type="number" [(ngModel)]="newDoc.amount" /></div>
+        <div class="field"><label>Waluta</label><input [(ngModel)]="newDoc.currency" /></div>
+        <div class="field"><label>Klient</label><input [(ngModel)]="newDoc.client" /></div>
+        <div class="field"><label>Termin płatności</label><input type="date" [(ngModel)]="newDoc.due_date" /></div>
+        <div class="field">
+          <label>Status</label>
+          <select [(ngModel)]="newDoc.status">
+            <option value="pending">Oczekuje</option>
+            <option value="paid">Opłacona</option>
+          </select>
+        </div>
+        <div class="field full"><label>Treść (opcjonalnie)</label><textarea [(ngModel)]="newDoc.content" rows="3"></textarea></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" (click)="createDoc()">Zapisz</button>
+        <button class="btn-ghost" (click)="showForm = false">Anuluj</button>
+      </div>
+    </div>
+
+    <div class="loading" *ngIf="loading">Ładowanie...</div>
+    <div class="doc-list" *ngIf="!loading">
+      <div class="doc-card" *ngFor="let doc of docs">
+        <div class="doc-type">{{ doc.type }}</div>
+        <div class="doc-title">{{ doc.title }}</div>
+        <div class="doc-meta" *ngIf="doc.client">👤 {{ doc.client }}</div>
+        <div class="doc-meta" *ngIf="doc.due_date">📅 {{ doc.due_date | date:'dd.MM.yyyy' }}</div>
+        <div class="doc-footer">
+          <span class="doc-amount">{{ doc.amount | number:'1.0-0' }} {{ doc.currency }}</span>
+          <span class="doc-status" [class]="'status-' + doc.status">{{ statusBadge(doc.status) }}</span>
+          <button class="btn-pay" *ngIf="doc.status === 'pending'" (click)="markPaid(doc)">Opłać</button>
+        </div>
+      </div>
+      <div class="empty" *ngIf="docs.length === 0">Brak dokumentów finansowych</div>
+    </div>
+  </div>
+
+  <!-- Cashflow Tab -->
+  <div *ngIf="activeTab === 'cashflow'">
+    <div class="tab-actions">
+      <button class="btn-primary" (click)="showCfForm = !showCfForm">+ Dodaj wpis</button>
+    </div>
+
+    <div class="card" *ngIf="showCfForm">
+      <h3>Nowy wpis Cash Flow</h3>
+      <div class="form-grid">
+        <div class="field">
+          <label>Typ</label>
+          <select [(ngModel)]="newCf.type">
+            <option value="income">Przychód</option>
+            <option value="expense">Wydatek</option>
+          </select>
+        </div>
+        <div class="field"><label>Kwota *</label><input type="number" [(ngModel)]="newCf.amount" /></div>
+        <div class="field"><label>Waluta</label><input [(ngModel)]="newCf.currency" /></div>
+        <div class="field"><label>Data *</label><input type="date" [(ngModel)]="newCf.date" /></div>
+        <div class="field full"><label>Opis</label><input [(ngModel)]="newCf.description" /></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" (click)="addCashflow()">Zapisz</button>
+        <button class="btn-ghost" (click)="showCfForm = false">Anuluj</button>
+      </div>
+    </div>
+
+    <div class="cf-list">
+      <div class="cf-row" *ngFor="let cf of cashflow" [class.income]="cf.type === 'income'" [class.expense]="cf.type === 'expense'">
+        <span class="cf-icon">{{ cf.type === 'income' ? '↑' : '↓' }}</span>
+        <div class="cf-details">
+          <span class="cf-desc">{{ cf.description || cf.type }}</span>
+          <span class="cf-date">{{ cf.date | date:'dd.MM.yyyy' }}</span>
+        </div>
+        <span class="cf-amount">{{ cf.type === 'income' ? '+' : '-' }}{{ cf.amount | number:'1.0-0' }} {{ cf.currency }}</span>
+      </div>
+      <div class="empty" *ngIf="cashflow.length === 0">Brak wpisów</div>
+    </div>
+  </div>
+</div>

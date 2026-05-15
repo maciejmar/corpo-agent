@@ -1,0 +1,35 @@
+<div class="app-shell">
+  <nav class="sidebar">
+    <div class="logo">
+      <span class="logo-icon">⚡</span>
+      <span class="logo-text">Corp Agent</span>
+    </div>
+    <ul class="nav-links">
+      <li>
+        <a routerLink="/dashboard" routerLinkActive="active">
+          <span class="icon">📊</span> Dashboard
+        </a>
+      </li>
+      <li>
+        <a routerLink="/tasks" routerLinkActive="active">
+          <span class="icon">✅</span> Zadania
+        </a>
+      </li>
+      <li>
+        <a routerLink="/finances" routerLinkActive="active">
+          <span class="icon">💰</span> Finanse
+        </a>
+      </li>
+      <li>
+        <a routerLink="/assistant" routerLinkActive="active">
+          <span class="icon">🎙️</span> Asystent AI
+        </a>
+      </li>
+    </ul>
+  </nav>
+
+  <main class="main-content">
+    <app-cost-tracker />
+    <router-outlet />
+  </main>
+</div>

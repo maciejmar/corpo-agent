@@ -1,0 +1,91 @@
+<div class="page">
+  <div class="page-header">
+    <h1>📋 Kanban – Backlog</h1>
+    <button class="btn-primary" (click)="showForm = !showForm">+ Nowe zadanie</button>
+  </div>
+
+  <div class="budget-warning" *ngIf="budgetWarning">
+    ⚠️ {{ budgetWarning }}
+    <button (click)="budgetWarning = null">✕</button>
+  </div>
+
+  <div class="task-form card" *ngIf="showForm">
+    <h3>Nowe zadanie</h3>
+    <div class="form-grid">
+      <div class="field">
+        <label>Tytuł *</label>
+        <input [(ngModel)]="newTask.title" placeholder="Opis zadania..." />
+      </div>
+      <div class="field">
+        <label>Klient</label>
+        <input [(ngModel)]="newTask.client" placeholder="Nazwa klienta" />
+      </div>
+      <div class="field">
+        <label>Priorytet</label>
+        <select [(ngModel)]="newTask.priority">
+          <option value="low">Niski</option>
+          <option value="medium">Średni</option>
+          <option value="high">Wysoki</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Termin</label>
+        <input type="date" [(ngModel)]="newTask.deadline" />
+      </div>
+      <div class="field checkbox">
+        <label>
+          <input type="checkbox" [(ngModel)]="newTask.requires_budget" />
+          Wymaga budżetu
+        </label>
+      </div>
+      <div class="field" *ngIf="newTask.requires_budget">
+        <label>Kwota (PLN)</label>
+        <input type="number" [(ngModel)]="newTask.budget_amount" min="0" />
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" (click)="createTask()">Utwórz</button>
+      <button class="btn-ghost" (click)="showForm = false">Anuluj</button>
+    </div>
+  </div>
+
+  <div class="loading" *ngIf="loading">Ładowanie zadań...</div>
+
+  <div class="kanban-board" *ngIf="!loading">
+    <div class="kanban-col" *ngFor="let col of columns">
+      <div class="col-header">
+        <span>{{ col.icon }} {{ col.label }}</span>
+        <span class="count">{{ getByStatus(col.key).length }}</span>
+      </div>
+      <div class="task-list">
+        <div
+          class="task-card"
+          *ngFor="let task of getByStatus(col.key)"
+          [class.overdue]="isOverdue(task)"
+        >
+          <div class="task-header">
+            <span class="priority" [class]="priorityClass(task.priority)">{{ task.priority }}</span>
+            <button class="btn-del" (click)="deleteTask(task)">✕</button>
+          </div>
+          <div class="task-title">{{ task.title }}</div>
+          <div class="task-meta" *ngIf="task.client">👤 {{ task.client }}</div>
+          <div class="task-meta" *ngIf="task.deadline">
+            📅 {{ task.deadline | date:'dd.MM.yyyy' }}
+            <span class="overdue-badge" *ngIf="isOverdue(task)">PRZETERMINOWANE</span>
+          </div>
+          <div class="task-meta budget" *ngIf="task.requires_budget">
+            💸 {{ task.budget_amount | number:'1.0-0' }} PLN
+          </div>
+          <div class="task-actions">
+            <button *ngIf="col.key !== 'todo'"        class="btn-move" (click)="moveTask(task,'todo')">◀ Do zrobienia</button>
+            <button *ngIf="col.key !== 'in_progress'" class="btn-move" (click)="moveTask(task,'in_progress')">▶ W toku</button>
+            <button *ngIf="col.key !== 'done'"        class="btn-move btn-done" (click)="moveTask(task,'done')">✔ Zrobione</button>
+          </div>
+        </div>
+        <div class="empty-col" *ngIf="getByStatus(col.key).length === 0">
+          <span>Brak zadań</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,67 @@
+<div class="assistant-page">
+  <div class="assistant-header">
+    <h1>🎙️ Asystent Głosowy AI</h1>
+    <div class="session-cost">
+      Koszt sesji: <strong>\${{ totalSessionCost | number:'1.4-6' }}</strong>
+    </div>
+  </div>
+
+  <div class="chat-container">
+    <div class="chat-messages">
+      <div class="message" *ngFor="let msg of messages" [class]="'msg-' + msg.role">
+        <div class="msg-bubble">
+          <div class="msg-content" [style.white-space]="'pre-wrap'">{{ msg.content }}</div>
+          <div class="msg-meta">
+            <span class="msg-time">{{ msg.timestamp | date:'HH:mm:ss' }}</span>
+            <span class="msg-action" *ngIf="msg.action">{{ msg.action }}</span>
+            <span class="msg-cost" *ngIf="msg.costUsd">\${{ msg.costUsd | number:'1.5-7' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="message msg-assistant" *ngIf="processing">
+        <div class="msg-bubble">
+          <div class="typing-dots"><span></span><span></span><span></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <div class="stt-toggle">
+        <label>
+          <input type="checkbox" [(ngModel)]="useBrowserStt" />
+          Użyj przeglądarki (bezpłatne STT)
+        </label>
+      </div>
+
+      <div class="input-row">
+        <button
+          class="mic-btn"
+          [class.recording]="voice.isRecording()"
+          (click)="toggleRecording()"
+          [disabled]="processing"
+        >
+          {{ voice.isRecording() ? '⏹ Stop' : '🎙️ Mów' }}
+        </button>
+
+        <textarea
+          class="text-input"
+          [(ngModel)]="textInput"
+          (keydown)="onKeydown($event)"
+          placeholder="Wpisz polecenie lub pytanie... (Enter = wyślij)"
+          rows="1"
+          [disabled]="processing"
+        ></textarea>
+
+        <button class="send-btn" (click)="sendText()" [disabled]="processing || !textInput.trim()">
+          ➤
+        </button>
+      </div>
+
+      <div class="hint">
+        Przykłady: "Dodaj zadanie: prezentacja dla klienta X, priorytet wysoki, termin piątek" •
+        "Pokaż cash flow" • "Czy mogę kupić licencję za 500 PLN?"
+      </div>
+    </div>
+  </div>
+</div>
