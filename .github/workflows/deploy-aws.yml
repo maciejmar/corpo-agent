@@ -1,0 +1,74 @@
+name: deploy-aws
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Image tag to deploy
+        required: false
+        default: ""
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: eu-central-1
+  TF_IN_AUTOMATION: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform init
+        working-directory: infra/aws
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=corp-agent/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
+
+      - name: Bootstrap ECR repositories
+        working-directory: infra/aws
+        run: terraform apply -auto-approve -target=aws_ecr_repository.backend -target=aws_ecr_repository.frontend
+
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push images
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag || github.sha }}
+        run: |
+          BACKEND_REPO=$(terraform -chdir=infra/aws output -raw backend_ecr_repository_url)
+          FRONTEND_REPO=$(terraform -chdir=infra/aws output -raw frontend_ecr_repository_url)
+          docker build -t "$BACKEND_REPO:$IMAGE_TAG" ./backend
+          docker build -t "$FRONTEND_REPO:$IMAGE_TAG" ./frontend
+          docker push "$BACKEND_REPO:$IMAGE_TAG"
+          docker push "$FRONTEND_REPO:$IMAGE_TAG"
+
+      - name: Terraform apply
+        working-directory: infra/aws
+        env:
+          TF_VAR_image_tag: ${{ inputs.image_tag || github.sha }}
+          TF_VAR_aws_region: ${{ env.AWS_REGION }}
+          TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+        run: terraform apply -auto-approve
+
+      - name: Smoke test
+        run: |
+          ALB=$(terraform -chdir=infra/aws output -raw alb_dns_name)
+          curl --fail --retry 20 --retry-delay 10 "http://$ALB/"
+          curl --fail --retry 12 --retry-delay 10 "http://$ALB/health"

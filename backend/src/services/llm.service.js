@@ -1,8 +1,18 @@
 const Anthropic = require('@anthropic-ai/sdk');
+const { BedrockRuntimeClient, InvokeModelCommand } = require('@aws-sdk/client-bedrock-runtime');
 const { logCost, calcLlmCost } = require('../middleware/costTracker');
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-const MODEL = 'claude-sonnet-4-6';
+const PROVIDER = process.env.LLM_PROVIDER || 'anthropic';
+const MODEL = process.env.LLM_MODEL || 'claude-sonnet-4-5-20250929';
+const BEDROCK_MODEL = process.env.BEDROCK_MODEL_ID || 'anthropic.claude-sonnet-4-5-20250929-v1:0';
+
+const anthropicClient = PROVIDER === 'anthropic'
+  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  : null;
+
+const bedrockClient = PROVIDER === 'bedrock'
+  ? new BedrockRuntimeClient({ region: process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'eu-central-1' })
+  : null;
 
 const SYSTEM_PROMPT = `Jesteś asystentem AI dla firmy. Pomagasz zarządzać zadaniami, finansami i cash flow.
 
@@ -14,13 +24,38 @@ Potrafisz:
 
 Odpowiadaj zawsze po polsku. Bądź zwięzły i precyzyjny.`;
 
+async function createMessage({ max_tokens, system, messages }) {
+  if (PROVIDER === 'bedrock') {
+    const command = new InvokeModelCommand({
+      modelId: BEDROCK_MODEL,
+      contentType: 'application/json',
+      accept: 'application/json',
+      body: JSON.stringify({
+        anthropic_version: 'bedrock-2023-05-31',
+        max_tokens,
+        system,
+        messages,
+      }),
+    });
+
+    const response = await bedrockClient.send(command);
+    return JSON.parse(Buffer.from(response.body).toString('utf8'));
+  }
+
+  return anthropicClient.messages.create({
+    model: MODEL,
+    max_tokens,
+    system,
+    messages,
+  });
+}
+
 async function chat(messages, context = '', sessionId = null) {
   const systemWithContext = context
     ? `${SYSTEM_PROMPT}\n\nKontekst z bazy wiedzy:\n${context}`
     : SYSTEM_PROMPT;
 
-  const response = await client.messages.create({
-    model: MODEL,
+  const response = await createMessage({
     max_tokens: 1024,
     system: systemWithContext,
     messages,
@@ -38,8 +73,7 @@ async function chat(messages, context = '', sessionId = null) {
 async function parseVoiceIntent(transcript, cashflowSummary = null) {
   const cfContext = cashflowSummary ? `\nAktualny Cash Flow: ${JSON.stringify(cashflowSummary)}` : '';
 
-  const response = await client.messages.create({
-    model: MODEL,
+  const response = await createMessage({
     max_tokens: 512,
     messages: [{
       role: 'user',
@@ -74,8 +108,7 @@ async function parseVoiceIntent(transcript, cashflowSummary = null) {
 }
 
 async function generateKpiAnalysis(tasks, financialDocs, cashflow) {
-  const response = await client.messages.create({
-    model: MODEL,
+  const response = await createMessage({
     max_tokens: 1024,
     messages: [{
       role: 'user',
