@@ -30,6 +30,47 @@
     }
   }
 
+  .user-panel {
+    margin-top: auto;
+    padding: 16px 20px;
+    border-top: 1px solid #1e2130;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .user-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #e2e8f0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-email {
+      font-size: 11px;
+      color: #6e7681;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 8px;
+    }
+
+    .logout-btn {
+      padding: 6px 12px;
+      background: transparent;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #8b949e;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+
+      &:hover { border-color: #f85149; color: #f85149; }
+    }
+  }
+
   .nav-links {
     list-style: none;
     padding: 0;

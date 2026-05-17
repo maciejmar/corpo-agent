@@ -34,6 +34,12 @@ variable "openai_api_key" {
   default   = ""
 }
 
+variable "jwt_secret" {
+  type      = string
+  sensitive = true
+  default   = ""
+}
+
 variable "bedrock_model_id" {
   type    = string
   default = "anthropic.claude-sonnet-4-5-20250929-v1:0"

@@ -1,17 +1,20 @@
 const express = require('express');
 const { query } = require('../db/database');
 const { generateKpiAnalysis } = require('../services/llm.service');
+const requireAuth = require('../middleware/auth.middleware');
+
 const router = express.Router();
+router.use(requireAuth);
 
 router.get('/', async (req, res) => {
   try {
+    const uid = req.user.id;
     const [tasks, docs, cashflow] = await Promise.all([
-      query('SELECT * FROM tasks ORDER BY created_at DESC LIMIT 100'),
-      query('SELECT * FROM financial_docs ORDER BY created_at DESC LIMIT 50'),
-      query('SELECT * FROM cashflow WHERE date >= CURRENT_DATE - INTERVAL \'90 days\' ORDER BY date DESC'),
+      query('SELECT * FROM tasks WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100', [uid]),
+      query('SELECT * FROM financial_docs WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50', [uid]),
+      query(`SELECT * FROM cashflow WHERE user_id = $1 AND date >= CURRENT_DATE - INTERVAL '90 days' ORDER BY date DESC`, [uid]),
     ]);
 
-    // Static KPIs (fast, no LLM cost)
     const taskRows = tasks.rows;
     const docRows = docs.rows;
     const cfRows = cashflow.rows;
@@ -44,13 +47,13 @@ router.get('/', async (req, res) => {
   }
 });
 
-// AI-powered deep analysis (costs LLM tokens)
 router.post('/analyze', async (req, res) => {
   try {
+    const uid = req.user.id;
     const [tasks, docs, cashflow] = await Promise.all([
-      query('SELECT * FROM tasks ORDER BY created_at DESC LIMIT 100'),
-      query('SELECT * FROM financial_docs ORDER BY created_at DESC LIMIT 50'),
-      query('SELECT * FROM cashflow ORDER BY date DESC LIMIT 90'),
+      query('SELECT * FROM tasks WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100', [uid]),
+      query('SELECT * FROM financial_docs WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50', [uid]),
+      query(`SELECT * FROM cashflow WHERE user_id = $1 ORDER BY date DESC LIMIT 90`, [uid]),
     ]);
     const analysis = await generateKpiAnalysis(tasks.rows, docs.rows, cashflow.rows);
     res.json(analysis);

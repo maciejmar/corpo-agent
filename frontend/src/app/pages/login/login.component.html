@@ -1,0 +1,23 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="brand">⚡ Corp Agent AI</div>
+    <h1>Zaloguj się</h1>
+    <form (ngSubmit)="submit()" #f="ngForm">
+      <div class="field">
+        <label>Email</label>
+        <input type="email" [(ngModel)]="email" name="email" required autocomplete="email" />
+      </div>
+      <div class="field">
+        <label>Hasło</label>
+        <input type="password" [(ngModel)]="password" name="password" required autocomplete="current-password" />
+      </div>
+      @if (error) {
+        <p class="error">{{ error }}</p>
+      }
+      <button type="submit" [disabled]="loading">
+        {{ loading ? 'Logowanie...' : 'Zaloguj się' }}
+      </button>
+    </form>
+    <p class="switch">Nie masz konta? <a routerLink="/register">Zarejestruj się</a></p>
+  </div>
+</div>

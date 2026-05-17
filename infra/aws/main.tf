@@ -206,6 +206,17 @@ resource "aws_secretsmanager_secret_version" "openai_api_key" {
   secret_string = var.openai_api_key
 }
 
+resource "aws_secretsmanager_secret" "jwt_secret" {
+  name                    = "${local.name}/jwt-secret"
+  recovery_window_in_days = 0
+  tags                    = local.tags
+}
+
+resource "aws_secretsmanager_secret_version" "jwt_secret" {
+  secret_id     = aws_secretsmanager_secret.jwt_secret.id
+  secret_string = var.jwt_secret
+}
+
 resource "aws_efs_file_system" "qdrant" {
   encrypted = true
   tags      = merge(local.tags, { Name = "${local.name}-qdrant" })
@@ -287,7 +298,8 @@ resource "aws_iam_role_policy" "ecs_task_execution_secrets" {
       Action = ["secretsmanager:GetSecretValue"]
       Resource = [
         aws_secretsmanager_secret.database_url.arn,
-        aws_secretsmanager_secret.openai_api_key.arn
+        aws_secretsmanager_secret.openai_api_key.arn,
+        aws_secretsmanager_secret.jwt_secret.arn,
       ]
     }]
   })
@@ -562,8 +574,9 @@ resource "aws_ecs_task_definition" "app" {
         { name = "AWS_REGION", value = var.aws_region }
       ]
       secrets = [
-        { name = "DATABASE_URL", valueFrom = aws_secretsmanager_secret.database_url.arn },
-        { name = "OPENAI_API_KEY", valueFrom = aws_secretsmanager_secret.openai_api_key.arn }
+        { name = "DATABASE_URL",   valueFrom = aws_secretsmanager_secret.database_url.arn },
+        { name = "OPENAI_API_KEY", valueFrom = aws_secretsmanager_secret.openai_api_key.arn },
+        { name = "JWT_SECRET",     valueFrom = aws_secretsmanager_secret.jwt_secret.arn },
       ]
       logConfiguration = {
         logDriver = "awslogs"
