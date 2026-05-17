@@ -322,6 +322,119 @@ resource "aws_iam_role_policy" "bedrock" {
   })
 }
 
+# ── GitHub Actions OIDC Role ───────────────────────────────────────────────────
+
+data "aws_iam_openid_connect_provider" "github" {
+  url = "https://token.actions.githubusercontent.com"
+}
+
+resource "aws_iam_role" "github_actions" {
+  name = "${local.name}-github-actions"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Federated = data.aws_iam_openid_connect_provider.github.arn }
+      Action    = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringLike = {
+          "token.actions.githubusercontent.com:sub" = "repo:${var.github_org}/${var.github_repo}:*"
+        }
+        StringEquals = {
+          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+        }
+      }
+    }]
+  })
+
+  tags = local.tags
+}
+
+resource "aws_iam_role_policy" "github_actions" {
+  name = "${local.name}-github-actions-deploy"
+  role = aws_iam_role.github_actions.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:PutImage",
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:UpdateService",
+          "ecs:DescribeServices",
+          "ecs:RegisterTaskDefinition",
+          "ecs:DescribeTaskDefinition",
+        ]
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["iam:PassRole"]
+        Resource = [aws_iam_role.ecs_task_execution.arn, aws_iam_role.ecs_task.arn]
+      },
+      {
+        Effect = "Allow"
+        Action = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"]
+        Resource = [
+          "arn:aws:s3:::${var.project}-*",
+          "arn:aws:s3:::${var.project}-*/*",
+          "arn:aws:s3:::corp-agent-tfstate-mm",
+          "arn:aws:s3:::corp-agent-tfstate-mm/*",
+        ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:DeleteItem"]
+        Resource = "arn:aws:dynamodb:${var.aws_region}:*:table/corp-agent-tfstate-lock"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["cloudfront:CreateInvalidation"]
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue", "secretsmanager:CreateSecret", "secretsmanager:PutSecretValue", "secretsmanager:DeleteSecret", "secretsmanager:DescribeSecret"]
+        Resource = "arn:aws:secretsmanager:${var.aws_region}:*:secret:${var.project}/*"
+      },
+      {
+        Sid    = "TerraformStateAccess"
+        Effect = "Allow"
+        Action = [
+          "ec2:Describe*", "ec2:CreateVpc", "ec2:CreateSubnet", "ec2:CreateInternetGateway",
+          "ec2:CreateRouteTable", "ec2:CreateSecurityGroup", "ec2:CreateRoute",
+          "ec2:AssociateRouteTable", "ec2:ModifyVpcAttribute", "ec2:AttachInternetGateway",
+          "ec2:AuthorizeSecurityGroupIngress", "ec2:AuthorizeSecurityGroupEgress",
+          "ec2:CreateTags", "ec2:DeleteVpc", "ec2:DeleteSubnet", "ec2:DeleteRouteTable",
+          "ec2:DeleteSecurityGroup", "ec2:DeleteInternetGateway", "ec2:DetachInternetGateway",
+          "ec2:DisassociateRouteTable", "ec2:RevokeSecurityGroupIngress", "ec2:RevokeSecurityGroupEgress",
+          "ec2:AllocateAddress", "ec2:ReleaseAddress", "ec2:CreateNatGateway", "ec2:DeleteNatGateway",
+          "ec2:ModifySubnetAttribute",
+          "ecs:*", "ecr:*", "logs:*", "application-autoscaling:*",
+          "elasticfilesystem:*", "servicediscovery:*",
+          "rds:*", "iam:*", "bedrock:*",
+        ]
+        Resource = "*"
+      },
+    ]
+  })
+}
+
 resource "aws_lb" "main" {
   name               = local.name
   load_balancer_type = "application"

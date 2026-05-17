@@ -38,3 +38,14 @@ variable "bedrock_model_id" {
   type    = string
   default = "anthropic.claude-sonnet-4-5-20250929-v1:0"
 }
+
+variable "github_org" {
+  description = "GitHub username lub nazwa organizacji"
+  type        = string
+}
+
+variable "github_repo" {
+  description = "Nazwa repozytorium (bez prefixu org)"
+  type        = string
+  default     = "corp-agent"
+}

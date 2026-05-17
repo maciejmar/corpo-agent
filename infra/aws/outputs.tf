@@ -17,3 +17,8 @@ output "ecs_cluster_name" {
 output "ecs_app_service_name" {
   value = aws_ecs_service.app.name
 }
+
+output "github_actions_role_arn" {
+  description = "Wklej jako AWS_ROLE_TO_ASSUME w GitHub Secrets"
+  value       = aws_iam_role.github_actions.arn
+}
