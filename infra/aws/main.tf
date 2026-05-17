@@ -212,9 +212,14 @@ resource "aws_secretsmanager_secret" "jwt_secret" {
   tags                    = local.tags
 }
 
+resource "random_password" "jwt" {
+  length  = 64
+  special = false
+}
+
 resource "aws_secretsmanager_secret_version" "jwt_secret" {
   secret_id     = aws_secretsmanager_secret.jwt_secret.id
-  secret_string = var.jwt_secret
+  secret_string = var.jwt_secret != "" ? var.jwt_secret : random_password.jwt.result
 }
 
 resource "aws_efs_file_system" "qdrant" {
