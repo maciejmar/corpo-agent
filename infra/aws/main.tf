@@ -414,6 +414,8 @@ resource "aws_iam_role_policy" "github_actions" {
           "secretsmanager:PutSecretValue", "secretsmanager:DeleteSecret",
           "secretsmanager:DescribeSecret", "secretsmanager:TagResource",
           "secretsmanager:UntagResource", "secretsmanager:ListSecrets",
+          "secretsmanager:GetResourcePolicy", "secretsmanager:PutResourcePolicy",
+          "secretsmanager:DeleteResourcePolicy",
         ]
         Resource = "*"
       },
@@ -429,7 +431,7 @@ resource "aws_iam_role_policy" "github_actions" {
           "ec2:DeleteSecurityGroup", "ec2:DeleteInternetGateway", "ec2:DetachInternetGateway",
           "ec2:DisassociateRouteTable", "ec2:RevokeSecurityGroupIngress", "ec2:RevokeSecurityGroupEgress",
           "ec2:AllocateAddress", "ec2:ReleaseAddress", "ec2:CreateNatGateway", "ec2:DeleteNatGateway",
-          "ec2:ModifySubnetAttribute",
+          "ec2:ModifySubnetAttribute", "ec2:GetSecurityGroupsForVpc",
           "ecs:*", "ecr:*", "logs:*", "application-autoscaling:*",
           "elasticfilesystem:*", "servicediscovery:*",
           "elasticloadbalancing:*",
@@ -530,7 +532,6 @@ resource "aws_ecs_service" "qdrant" {
 
   service_registries {
     registry_arn = aws_service_discovery_service.qdrant.arn
-    port         = 6333
   }
 
   depends_on = [aws_efs_mount_target.qdrant]
