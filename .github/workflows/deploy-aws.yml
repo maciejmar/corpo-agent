@@ -17,6 +17,8 @@ permissions:
 env:
   AWS_REGION: eu-central-1
   TF_IN_AUTOMATION: true
+  TF_VAR_github_org: maciejmar
+  TF_VAR_github_repo: corpo-agent
 
 jobs:
   deploy:
@@ -65,8 +67,6 @@ jobs:
           TF_VAR_image_tag: ${{ inputs.image_tag || github.sha }}
           TF_VAR_aws_region: ${{ env.AWS_REGION }}
           TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
-          TF_VAR_github_org: maciejmar
-          TF_VAR_github_repo: corpo-agent
         run: terraform apply -auto-approve
 
       - name: Smoke test
