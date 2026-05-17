@@ -42,7 +42,7 @@ variable "jwt_secret" {
 
 variable "bedrock_model_id" {
   type    = string
-  default = "anthropic.claude-sonnet-4-5-20250929-v1:0"
+  default = "eu.anthropic.claude-sonnet-4-5-20250929-v1:0"
 }
 
 variable "github_org" {

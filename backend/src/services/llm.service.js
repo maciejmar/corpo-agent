@@ -4,7 +4,7 @@ const { logCost, calcLlmCost } = require('../middleware/costTracker');
 
 const PROVIDER = process.env.LLM_PROVIDER || 'anthropic';
 const MODEL = process.env.LLM_MODEL || 'claude-sonnet-4-5-20250929';
-const BEDROCK_MODEL = process.env.BEDROCK_MODEL_ID || 'anthropic.claude-sonnet-4-5-20250929-v1:0';
+const BEDROCK_MODEL = process.env.BEDROCK_MODEL_ID || 'eu.anthropic.claude-sonnet-4-5-20250929-v1:0';
 
 const anthropicClient = PROVIDER === 'anthropic'
   ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
