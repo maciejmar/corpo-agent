@@ -408,9 +408,14 @@ resource "aws_iam_role_policy" "github_actions" {
         Resource = "*"
       },
       {
-        Effect   = "Allow"
-        Action   = ["secretsmanager:GetSecretValue", "secretsmanager:CreateSecret", "secretsmanager:PutSecretValue", "secretsmanager:DeleteSecret", "secretsmanager:DescribeSecret"]
-        Resource = "arn:aws:secretsmanager:${var.aws_region}:*:secret:${var.project}/*"
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue", "secretsmanager:CreateSecret",
+          "secretsmanager:PutSecretValue", "secretsmanager:DeleteSecret",
+          "secretsmanager:DescribeSecret", "secretsmanager:TagResource",
+          "secretsmanager:UntagResource", "secretsmanager:ListSecrets",
+        ]
+        Resource = "*"
       },
       {
         Sid    = "TerraformStateAccess"
@@ -427,6 +432,8 @@ resource "aws_iam_role_policy" "github_actions" {
           "ec2:ModifySubnetAttribute",
           "ecs:*", "ecr:*", "logs:*", "application-autoscaling:*",
           "elasticfilesystem:*", "servicediscovery:*",
+          "elasticloadbalancing:*",
+          "route53:*", "route53resolver:*",
           "rds:*", "iam:*", "bedrock:*",
         ]
         Resource = "*"
